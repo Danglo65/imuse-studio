@@ -121,7 +121,12 @@ def run_real(args: argparse.Namespace) -> None:
             "extremely slow. Run this on a cloud GPU instance (Colab/RunPod/etc).",
             file=sys.stderr,
         )
-    weight_dtype = torch.float16 if device == "cuda" else torch.float32
+    # float32, not fp16: this script runs the forward/backward pass directly
+    # in weight_dtype with no autocast/GradScaler, and SD1.5's VAE in
+    # particular is numerically unstable in fp16 on some GPUs (silent NaN
+    # latents during encode). float32 training is slower and uses more VRAM,
+    # but is the safe default without a proper mixed-precision setup.
+    weight_dtype = torch.float32
 
     instance_data_dir = Path(args.instance_data_dir)
     output_dir = Path(args.output_dir)

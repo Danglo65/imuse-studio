@@ -63,7 +63,12 @@ def run_real(args: argparse.Namespace) -> list[str]:
     from diffusers import StableDiffusionPipeline
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    dtype = torch.float16 if device == "cuda" else torch.float32
+    # float32 throughout, not fp16: SD1.5's original VAE is numerically
+    # unstable in fp16 on some GPUs and silently produces NaN pixels
+    # (rendered as solid black, with no error). float32 has a real speed/VRAM
+    # cost, but this app's GPUs have headroom for SD1.5 at that precision and
+    # correctness matters more here than shaving inference time.
+    dtype = torch.float32
 
     # Safety checker disabled: this is a private, personal instance generating
     # from the operator's own trained concepts, not a public-facing product.

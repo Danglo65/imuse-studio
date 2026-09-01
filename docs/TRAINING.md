@@ -28,6 +28,29 @@ normal FastAPI/PyTorch process. A few concrete paths:
 5. Build the frontend pointed at that URL and host it anywhere static
    (or run `npm run dev` locally with `VITE_API_URL=https://<pod-url>`).
 
+### Surviving pod restarts (RunPod, and similar providers)
+
+On RunPod (and similar providers), only a persistent volume (`/workspace` on
+RunPod) survives a pod stop/restart or a config change like editing exposed
+ports -- everything else, including anything installed with `apt-get` or a
+plain `pip install`/`npm install -g`, is wiped and needs reinstalling.
+
+`backend/scripts/start_pod.sh` automates recovery: it installs Node.js if
+missing, and creates a Python venv under `/workspace/venv` (which *does*
+persist) the first time only -- on every later run/restart it just reuses
+the existing venv and restarts the backend + frontend in seconds instead of
+minutes. One-time setup:
+
+```bash
+cat > /workspace/.imuse_env <<'EOF'
+export IMUSE_API_KEY=<your key>
+export VITE_API_URL=<your backend's public proxy URL>
+EOF
+bash backend/scripts/start_pod.sh
+```
+
+After any restart, just re-run `bash backend/scripts/start_pod.sh` again.
+
 ## Option B: AWS EC2 (g5/g4dn instance)
 
 1. Launch a `g5.xlarge` (or similar) with the "Deep Learning AMI" (comes

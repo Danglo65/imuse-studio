@@ -109,7 +109,8 @@ def run_real(args: argparse.Namespace) -> None:
     from torchvision import transforms
     from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
     from diffusers.utils import convert_state_dict_to_diffusers
-    from peft import LoraConfig, get_peft_model, get_peft_model_state_dict
+    from peft import LoraConfig
+    from peft.utils import get_peft_model_state_dict
     from transformers import CLIPTextModel, CLIPTokenizer
 
     torch.manual_seed(args.seed)
@@ -144,7 +145,13 @@ def run_real(args: argparse.Namespace) -> None:
         lora_dropout=0.0,
         bias="none",
     )
-    unet = get_peft_model(unet, lora_config)
+    # Inject LoRA in-place via diffusers' own PEFT integration (unet.add_adapter)
+    # rather than wrapping with peft.get_peft_model(). The latter creates a
+    # separate PeftModel object whose state-dict keys are nested under
+    # "base_model.model.", which StableDiffusionPipeline.save/load_lora_weights
+    # do not strip -- that mismatch is what caused the first fix attempt to
+    # still fail to load.
+    unet.add_adapter(lora_config)
 
     vae.to(device, dtype=weight_dtype)
     text_encoder.to(device, dtype=weight_dtype)

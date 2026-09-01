@@ -65,7 +65,14 @@ def run_real(args: argparse.Namespace) -> list[str]:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
-    pipe = StableDiffusionPipeline.from_pretrained(args.base_model, torch_dtype=dtype)
+    # Safety checker disabled: this is a private, personal instance generating
+    # from the operator's own trained concepts, not a public-facing product.
+    # SD1.5's default checker is also prone to false positives on face
+    # close-ups, which is exactly this app's typical use case, and a flagged
+    # image is silently replaced with solid black with no way to inspect it.
+    pipe = StableDiffusionPipeline.from_pretrained(
+        args.base_model, torch_dtype=dtype, safety_checker=None, requires_safety_checker=False
+    )
     pipe = pipe.to(device)
     pipe.set_progress_bar_config(disable=True)
 

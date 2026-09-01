@@ -1,0 +1,23 @@
+# GPU image for real training/inference. Build & run this on a cloud GPU box
+# (RunPod, Lambda Labs, AWS g5/g4dn, etc) -- see docs/TRAINING.md.
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3-pip git \
+    && rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/bin/python3.11 /usr/bin/python
+
+WORKDIR /app/backend
+
+COPY requirements.txt requirements-ml.txt ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r requirements-ml.txt
+
+COPY . .
+
+ENV IMUSE_MOCK_ML=0
+ENV IMUSE_DATA_DIR=/data
+VOLUME ["/data"]
+
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

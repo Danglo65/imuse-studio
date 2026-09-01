@@ -1,0 +1,9 @@
+# Heavy ML dependencies, only needed when IMUSE_MOCK_ML=0 (i.e. real training
+# / inference on a GPU box). Not required for local UI development.
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.2
+torchvision>=0.17
+diffusers>=0.27
+transformers>=4.39
+peft>=0.10
+safetensors>=0.4

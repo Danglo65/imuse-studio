@@ -7,10 +7,11 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from .. import storage
+from ..auth import require_api_key
 from ..db import get_session
 from ..models import Dataset, DatasetImage
 
-router = APIRouter(prefix="/api/datasets", tags=["datasets"])
+router = APIRouter(prefix="/api/datasets", tags=["datasets"], dependencies=[Depends(require_api_key)])
 
 ALLOWED_CONTENT_TYPES = {"image/png", "image/jpeg", "image/webp", "image/bmp"}
 MAX_IMAGE_BYTES = 12 * 1024 * 1024

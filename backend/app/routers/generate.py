@@ -10,10 +10,11 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from .. import config
+from ..auth import require_api_key
 from ..db import get_session
 from ..models import GeneratedImage, JobStatus, TrainJob
 
-router = APIRouter(prefix="/api/generate", tags=["generate"])
+router = APIRouter(prefix="/api/generate", tags=["generate"], dependencies=[Depends(require_api_key)])
 
 INFERENCE_SCRIPT = Path(__file__).resolve().parent.parent.parent / "training" / "inference.py"
 

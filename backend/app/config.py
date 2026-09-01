@@ -22,3 +22,10 @@ MOCK_ML = os.environ.get("IMUSE_MOCK_ML", "1") == "1"
 DEFAULT_BASE_MODEL = os.environ.get("IMUSE_BASE_MODEL", "runwayml/stable-diffusion-v1-5")
 
 PYTHON_EXECUTABLE = os.environ.get("IMUSE_PYTHON", os.sys.executable)
+
+# When set, all /api/* routes (except /api/health) require a matching
+# X-API-Key header. Training and generation are GPU-expensive, so an
+# exposed instance is both a cost risk and an abuse vector -- see
+# docs/TRAINING.md. Unset (the default) leaves the API open, which is fine
+# for local-only development but not for anything reachable publicly.
+API_KEY = os.environ.get("IMUSE_API_KEY") or None

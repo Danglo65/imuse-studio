@@ -3,10 +3,11 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from .. import config, job_runner, storage
+from ..auth import require_api_key
 from ..db import get_session
 from ..models import Dataset, DatasetImage, JobStatus, TrainJob
 
-router = APIRouter(prefix="/api/train", tags=["train"])
+router = APIRouter(prefix="/api/train", tags=["train"], dependencies=[Depends(require_api_key)])
 
 
 class TrainJobCreate(BaseModel):

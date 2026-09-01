@@ -1,4 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_KEY = import.meta.env.VITE_API_KEY || ''
+
+function withApiKey(url: string): string {
+  if (!API_KEY) return url
+  return `${url}${url.includes('?') ? '&' : '?'}api_key=${encodeURIComponent(API_KEY)}`
+}
 
 export interface Dataset {
   id: number
@@ -54,7 +60,9 @@ export interface GeneratedImage {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, options)
+  const headers = new Headers(options?.headers)
+  if (API_KEY) headers.set('X-API-Key', API_KEY)
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (!res.ok) {
     let detail = res.statusText
     try {
@@ -98,7 +106,7 @@ export const api = {
   deleteImage: (datasetId: number, imageId: number) =>
     request<{ ok: boolean }>(`/api/datasets/${datasetId}/images/${imageId}`, { method: 'DELETE' }),
   imageUrl: (datasetId: number, imageId: number) =>
-    `${API_BASE}/api/datasets/${datasetId}/images/${imageId}/file`,
+    withApiKey(`${API_BASE}/api/datasets/${datasetId}/images/${imageId}/file`),
 
   listJobs: () => request<TrainJob[]>('/api/train/jobs'),
   getJob: (id: number) => request<TrainJob>(`/api/train/jobs/${id}`),
@@ -130,5 +138,5 @@ export const api = {
     seed?: number
   }) => request<GeneratedImage[]>('/api/generate', jsonBody(body)),
   generationHistory: () => request<GeneratedImage[]>('/api/generate/history'),
-  generatedImageUrl: (id: number) => `${API_BASE}/api/generate/${id}/file`,
+  generatedImageUrl: (id: number) => withApiKey(`${API_BASE}/api/generate/${id}/file`),
 }

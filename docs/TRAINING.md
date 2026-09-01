@@ -70,9 +70,19 @@ or load directly with `training/inference.py --lora_dir ...`.
 
 ## Security note
 
-This scaffold has no authentication on the API. Training and generation
-are compute-expensive, so an exposed instance is both a cost risk and an
-abuse vector. Before exposing it beyond your own machine, put it behind a
-reverse proxy with auth (e.g. an nginx basic-auth in front, a Cloudflare
-Access application, or a simple API-key middleware in `app/main.py`) --
-don't just open the port to the public internet.
+Training and generation are compute-expensive, so an exposed instance is
+both a cost risk and an abuse vector. The backend supports simple API-key
+auth: set `IMUSE_API_KEY` to a long random value before starting it (e.g.
+`export IMUSE_API_KEY=$(openssl rand -hex 32)`) and every `/api/*` route
+except `/api/health` will require a matching `X-API-Key` header (or
+`api_key` query param, used for `<img>` tags). If unset, the API stays
+open -- fine for local-only development, not for anything with a public
+URL like a RunPod proxy address.
+
+Point the frontend at an authenticated backend by setting `VITE_API_KEY`
+to the same value when running/building it.
+
+This is enough to keep casual/opportunistic access out, but it's a single
+shared static key, not real per-user auth -- for anything beyond personal
+use, put it behind a proper reverse proxy (Cloudflare Access, an
+authenticating nginx, etc.) instead.

@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
+from ..auth import require_api_key
 from ..db import get_session
 from ..models import JobStatus, TrainJob
 
-router = APIRouter(prefix="/api/models", tags=["models"])
+router = APIRouter(prefix="/api/models", tags=["models"], dependencies=[Depends(require_api_key)])
 
 
 @router.get("", response_model=list[TrainJob])

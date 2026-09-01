@@ -107,8 +107,9 @@ def run_real(args: argparse.Namespace) -> None:
     from PIL import Image
     from torch.utils.data import DataLoader, Dataset
     from torchvision import transforms
-    from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
-    from peft import LoraConfig, get_peft_model
+    from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
+    from diffusers.utils import convert_state_dict_to_diffusers
+    from peft import LoraConfig, get_peft_model, get_peft_model_state_dict
     from transformers import CLIPTextModel, CLIPTokenizer
 
     torch.manual_seed(args.seed)
@@ -221,7 +222,18 @@ def run_real(args: argparse.Namespace) -> None:
         if global_step % 20 == 0:
             print(f"step {global_step}/{args.max_train_steps} loss={loss.item():.4f}")
 
-    unet.save_pretrained(str(output_dir))
+    # Save in diffusers' own LoRA state-dict format (component-prefixed keys),
+    # not a raw PEFT save -- StableDiffusionPipeline.load_lora_weights() only
+    # recognizes the former. A bare unet.save_pretrained() here silently
+    # produces an adapter that load_lora_weights() can't match against any
+    # component, so it loads nothing and generation quietly falls back to the
+    # unmodified base model.
+    unet_lora_state_dict = convert_state_dict_to_diffusers(get_peft_model_state_dict(unet))
+    StableDiffusionPipeline.save_lora_weights(
+        save_directory=str(output_dir),
+        unet_lora_layers=unet_lora_state_dict,
+        safe_serialization=True,
+    )
     write_metadata(output_dir, args, len(samples))
     print("training complete")
 
